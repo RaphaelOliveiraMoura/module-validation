@@ -1,0 +1,26 @@
+{
+  "name": "module-validation",
+  "version": "1.0.3",
+  "main": "index.js",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RaphaelOliveiraMoura/module-validation"
+  },
+  "bin": "./index.js",
+  "files": [
+    "index.js",
+    "templates/",
+    "public/"
+  ],
+  "dependencies": {
+    "fs-extra": "^10.0.1"
+  },
+  "keywords": [
+    "validation",
+    "vanilla",
+    "validators",
+    "javasrcipt",
+    "typescript"
+  ]
+}
