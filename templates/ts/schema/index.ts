@@ -1,26 +1,19 @@
-import { ValidationResult, ValidationSchema } from '..';
 import { validateSchemaRecursive } from './validateSchemaRecursive';
 
-type SchemaValidatorDefaultParams = {
-  context: unknown;
-};
+import { CreateSchemaValidator } from '..';
 
-export function schemaValidator<T = SchemaValidatorDefaultParams>(
-  validateSchema: ValidationSchema
-) {
-  return async (
-    objectToValidate: unknown,
-    customParams: T
-  ): Promise<ValidationResult> => {
+export const createSchemaValidator: CreateSchemaValidator =
+  schema => async (objectToValidate, customContext) => {
     const mutableErrors = {};
     const mutableIsValid = { valid: true };
+    const context = customContext || objectToValidate;
 
     await validateSchemaRecursive(
-      validateSchema,
+      schema,
       objectToValidate,
       mutableErrors,
       mutableIsValid,
-      { ...customParams }
+      { ...context }
     );
 
     return {
@@ -28,4 +21,3 @@ export function schemaValidator<T = SchemaValidatorDefaultParams>(
       isValid: mutableIsValid.valid
     };
   };
-}

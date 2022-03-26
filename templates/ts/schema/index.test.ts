@@ -1,111 +1,81 @@
-import { emailValidator, requiredValidator } from '../validators';
+import { createSchemaValidator } from '.';
 
-import { composite } from '../composite';
-import { schemaValidator } from '.';
+import { composite, emailValidator, requiredValidator } from '..';
 
-describe('Validation > Schema', () => {
-  it('should test composition of validators nested', async () => {
-    const validator = schemaValidator({
-      loading: composite([requiredValidator]),
-      imageUrl: composite([requiredValidator]),
-      personal: {
-        email: composite([requiredValidator, emailValidator]),
-        optionalEmail: composite([emailValidator]),
-        optionalEmail2: composite([emailValidator]),
-        name: composite([requiredValidator]),
-        age: composite([requiredValidator])
-      },
-      private: {
-        married: composite([requiredValidator]),
-        happy: composite([requiredValidator]),
-        password: composite([requiredValidator])
-      }
-    });
+describe('ValidationSchema', () => {
+  it('should return errors map to nested objects', async () => {
+    const schema = {
+      id: requiredValidator,
+      profile: { name: requiredValidator, age: requiredValidator }
+    };
+    const schemaValidator = createSchemaValidator(schema);
 
-    expect(await validator({}, { context: {} })).toStrictEqual({
+    const objectToValidate = {};
+
+    expect(await schemaValidator(objectToValidate)).toStrictEqual({
       isValid: false,
       errors: {
-        loading: 'Campo obrigatório',
-        imageUrl: 'Campo obrigatório',
-        personal: {
-          email: 'Campo obrigatório',
-          name: 'Campo obrigatório',
-          age: 'Campo obrigatório',
-          optionalEmail: null,
-          optionalEmail2: null
-        },
-        private: {
-          married: 'Campo obrigatório',
-          happy: 'Campo obrigatório',
-          password: 'Campo obrigatório'
-        }
+        id: 'Campo obrigatório',
+        profile: { name: 'Campo obrigatório', age: 'Campo obrigatório' }
       }
     });
+  });
 
-    expect(
-      await validator(
-        {
-          personal: { optionalEmail2: 'invalid' },
-          private: { happy: true }
-        },
-        { context: {} }
-      )
-    ).toStrictEqual({
+  it('should validate schema with composition of validators', async () => {
+    const schema = { email: composite([requiredValidator, emailValidator]) };
+    const schemaValidator = createSchemaValidator(schema);
+
+    expect(await schemaValidator({})).toStrictEqual({
       isValid: false,
-      errors: {
-        loading: 'Campo obrigatório',
-        imageUrl: 'Campo obrigatório',
-        personal: {
-          email: 'Campo obrigatório',
-          name: 'Campo obrigatório',
-          age: 'Campo obrigatório',
-          optionalEmail: null,
-          optionalEmail2: 'Email inválido'
-        },
-        private: {
-          married: 'Campo obrigatório',
-          happy: null,
-          password: 'Campo obrigatório'
-        }
-      }
+      errors: { email: 'Campo obrigatório' }
     });
 
+    expect(await schemaValidator({ email: 'invalid-email' })).toStrictEqual({
+      isValid: false,
+      errors: { email: 'Email inválido' }
+    });
+  });
+
+  it('should call validator passing object to validate as default context', async () => {
+    const validatorSpy = jest.fn(() => null);
+
+    const schema = { name: validatorSpy };
+    const schemaValidator = createSchemaValidator(schema);
+
+    const objectToValidate = { name: 'some-data' };
+
+    expect(await schemaValidator(objectToValidate)).toStrictEqual({
+      isValid: true,
+      errors: { name: null }
+    });
+
+    expect(validatorSpy).toHaveBeenCalledWith(
+      objectToValidate.name,
+      objectToValidate
+    );
+  });
+
+  it('should be able to pass a custom context', async () => {
+    const validatorSpy = jest.fn(() => null);
+
+    type CustomContextType = { custom: string };
+
+    const schema = { name: validatorSpy };
+    const schemaValidator = createSchemaValidator<CustomContextType>(schema);
+
+    const objectToValidate = { name: 'some-data' };
+    const customContext = { custom: 'params' };
+
     expect(
-      await validator(
-        {
-          loading: true,
-          imageUrl: 'https://link.com.br',
-          personal: {
-            email: 'raphael@gmail.com',
-            name: 'raphael',
-            age: 22
-          },
-          private: {
-            married: true,
-            happy: true,
-            password: '12345678'
-          }
-        },
-        { context: {} }
-      )
+      await schemaValidator(objectToValidate, customContext)
     ).toStrictEqual({
       isValid: true,
-      errors: {
-        loading: null,
-        imageUrl: null,
-        personal: {
-          email: null,
-          name: null,
-          age: null,
-          optionalEmail: null,
-          optionalEmail2: null
-        },
-        private: {
-          married: null,
-          happy: null,
-          password: null
-        }
-      }
+      errors: { name: null }
     });
+
+    expect(validatorSpy).toHaveBeenCalledWith(
+      objectToValidate.name,
+      customContext
+    );
   });
 });

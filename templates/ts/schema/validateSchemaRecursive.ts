@@ -7,7 +7,7 @@ export async function validateSchemaRecursive(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   mutableErrors: any,
   mutableIsValid: { valid: boolean },
-  customParams: unknown
+  context: unknown
 ) {
   const validateEntries = Object.entries(validateSchema);
 
@@ -19,7 +19,7 @@ export async function validateSchemaRecursive(
 
       const validatorError = await validateFunction(
         objectToValidate[key],
-        customParams
+        context
       );
 
       if (validatorError) {
@@ -37,7 +37,7 @@ export async function validateSchemaRecursive(
       objectToValidate[key] || {},
       mutableErrors[key],
       mutableIsValid,
-      customParams
+      context
     );
   }
 }
